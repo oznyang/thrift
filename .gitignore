@@ -227,3 +227,7 @@ gen-*
 /test/rb/Makefile
 /test/rb/Makefile.in
 /ylwrap
+
+/compiler/cpp/src/thriftl.cc
+/compiler/cpp/src/thrifty.cc
+/compiler/cpp/src/thrifty.h
