@@ -81,6 +81,7 @@ thrift_SOURCES += src/generate/t_c_glib_generator.cc \
                   src/generate/t_hs_generator.cc \
                   src/generate/t_xsd_generator.cc \
                   src/generate/t_html_generator.cc \
+                  src/generate/t_xml_generator.cc \
                   src/generate/t_js_generator.cc \
                   src/generate/t_javame_generator.cc \
                   src/generate/t_delphi_generator.cc \

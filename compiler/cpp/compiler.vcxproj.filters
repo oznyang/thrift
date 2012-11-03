@@ -78,6 +78,7 @@
     <ClInclude Include="src\windows\version.h">
       <Filter>windows</Filter>
     </ClInclude>
+    <ClInclude Include="src\version.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="windows">
@@ -164,6 +165,7 @@
     </ClCompile>
     <ClCompile Include="src\thriftl.cc" />
     <ClCompile Include="src\thrifty.cc" />
+    <ClCompile Include="src\generate\t_xml_generator.cc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\thriftl.ll" />

@@ -2203,9 +2203,9 @@ void t_java_generator::generate_service(t_service* tservice) {
 
   // Generate the three main parts of the service
   generate_service_interface(tservice);
-  generate_service_async_interface(tservice);
+  //generate_service_async_interface(tservice);
   generate_service_client(tservice);
-  generate_service_async_client(tservice);
+  //generate_service_async_client(tservice);
   generate_service_server(tservice);
   generate_service_helpers(tservice);
 
