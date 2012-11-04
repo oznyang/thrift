@@ -24,7 +24,7 @@
     </parent>
     <artifactId>libthrift</artifactId>
     <packaging>jar</packaging>
-    <name>Apache Thrift</name>
+    <name>thrift-java</name>
     <dependencies>
         <dependency>
             <groupId>org.slf4j</groupId>

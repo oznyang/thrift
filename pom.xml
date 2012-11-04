@@ -8,18 +8,15 @@
         <groupId>sanyuan</groupId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
-    <artifactId>Thrift</artifactId>
-    <packaging>dotnet-library</packaging>
-    <name>thrift-csharp</name>
-    <description>The thrift lib</description>
+    <artifactId>thrift-parent</artifactId>
+    <packaging>pom</packaging>
+    <name>${project.artifactId}</name>
+    <description>Thrift Parent</description>
 
-    <build>
-        <sourceDirectory>src</sourceDirectory>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.npanday.plugins</groupId>
-                <artifactId>maven-compile-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </build>
+    <modules>
+        <module>lib/java</module>
+        <module>lib/csharp</module>
+        <module>lib/php</module>
+        <module>lib/js</module>
+    </modules>
 </project>

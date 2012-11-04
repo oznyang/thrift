@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Project:  any
+  ~ Module:   common-api
+  ~ File:     assembly.xml
+  ~ Modifier: xyang
+  ~ Modified: 2012-07-03 20:59
+  ~
+  ~ Copyright (c) 2012 Sanyuan Ltd. All Rights Reserved.
+  ~
+  ~ Copying of this document or code and giving it to others and the
+  ~ use or communication of the contents thereof, are forbidden without
+  ~ expressed authority. Offenders are liable to the payment of damages.
+  ~ All rights reserved in the event of the grant of a invention patent or the
+  ~ registration of a utility model, design or code.
+  -->
+<assembly
+        xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
+    <id>php</id>
+    <formats>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <fileSets>
+        <fileSet>
+            <directory>lib</directory>
+            <outputDirectory>/</outputDirectory>
+        </fileSet>
+    </fileSets>
+</assembly>
