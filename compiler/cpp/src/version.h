@@ -24,7 +24,6 @@
 #endif // _MSC_VER
 
 #define PATH_MAX MAX_PATH
-#define THRIFT_VERSION "0.9.0-any"
 
 #ifndef S_ISDIR
 #define S_ISDIR(mode)  (((mode) & S_IFMT) == S_IFDIR)
@@ -35,3 +34,5 @@
 #endif
 
 #endif //_WIN32
+
+#define THRIFT_VERSION "1.0.0-SNAPSHOT"
