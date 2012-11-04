@@ -231,3 +231,4 @@ gen-*
 /compiler/cpp/src/thriftl.cc
 /compiler/cpp/src/thrifty.cc
 /compiler/cpp/src/thrifty.h
+/lib/csharp/target/*
