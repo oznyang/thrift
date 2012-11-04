@@ -379,8 +379,11 @@ void t_php_generator::init_generator() {
   // Print header
   f_types_ <<
     "<?php" << endl;
-    f_types_ << "namespace " << php_namespace_suffix(get_program()) << ";" << endl << endl;
-  f_types_ << autogen_comment() << php_includes();
+  string f_ns=php_namespace_suffix(get_program());
+  if(!f_ns.empty()) {
+	f_types_ << "namespace " << f_ns << ";" << endl;
+  }
+  f_types_ << endl << autogen_comment() << php_includes();
 
   f_types_ << endl;
 }
