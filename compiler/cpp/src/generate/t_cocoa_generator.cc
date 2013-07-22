@@ -1062,7 +1062,7 @@ void t_cocoa_generator::generate_cocoa_struct_field_accessor_implementations(ofs
   for (f_iter = fields.begin(); f_iter != fields.end(); ++f_iter) {
     t_field* field = *f_iter;
     t_type* type = get_true_type(field->get_type());
-    std::string field_name = field->get_name();
+    std::string field_name = convert_name(field->get_name());
     std::string cap_name = field_name;
     cap_name[0] = toupper(cap_name[0]);
 
