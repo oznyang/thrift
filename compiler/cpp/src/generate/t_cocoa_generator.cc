@@ -81,8 +81,8 @@ class t_cocoa_generator : public t_oop_generator {
   std::string render_const_value(ofstream& out, t_type* type, t_const_value* value, bool containerize_it=false);
 
   void generate_cocoa_struct(t_struct* tstruct, bool is_exception);
-  void generate_cocoa_struct_interface(std::ofstream& out, t_struct* tstruct, bool is_xception=false);
-  void generate_cocoa_struct_implementation(std::ofstream& out, t_struct* tstruct, bool is_xception=false, bool is_result=false);
+  void generate_cocoa_struct_interface(std::ofstream& out, t_struct* tstruct, std::string prefix, bool is_xception=false);
+  void generate_cocoa_struct_implementation(std::ofstream& out, t_struct* tstruct, std::string prefix, bool is_xception=false, bool is_result=false);
   void generate_cocoa_struct_initializer_signature(std::ofstream& out,
                                                    t_struct* tstruct);
   void generate_cocoa_struct_init_with_coder_method(ofstream &out,
@@ -104,7 +104,7 @@ class t_cocoa_generator : public t_oop_generator {
 
   std::string function_result_helper_struct_type(t_function* tfunction);
   std::string function_args_helper_struct_type(t_function* tfunction);
-  void generate_function_helpers(t_function* tfunction);
+  void generate_function_helpers(t_function* tfunction, t_service* tservice);
 
   /**
    * Service-level generation functions
@@ -434,8 +434,8 @@ void t_cocoa_generator::generate_consts(std::vector<t_const*> consts) {
  * @param tstruct The struct definition
  */
 void t_cocoa_generator::generate_struct(t_struct* tstruct) {
-  generate_cocoa_struct_interface(f_header_, tstruct, false);
-  generate_cocoa_struct_implementation(f_impl_, tstruct, false);
+  generate_cocoa_struct_interface(f_header_, tstruct, "", false);
+  generate_cocoa_struct_implementation(f_impl_, tstruct, "", false);
 }
 
 /**
@@ -444,8 +444,8 @@ void t_cocoa_generator::generate_struct(t_struct* tstruct) {
  * @param tstruct The struct definition
  */
 void t_cocoa_generator::generate_xception(t_struct* txception) {
-  generate_cocoa_struct_interface(f_header_, txception, true);
-  generate_cocoa_struct_implementation(f_impl_, txception, true);
+  generate_cocoa_struct_interface(f_header_, txception, "", true);
+  generate_cocoa_struct_implementation(f_impl_, txception, "", true);
 }
 
 
@@ -456,8 +456,9 @@ void t_cocoa_generator::generate_xception(t_struct* txception) {
  */
 void t_cocoa_generator::generate_cocoa_struct_interface(ofstream &out,
                                                       t_struct* tstruct,
+                                                      std::string prefix,
                                                       bool is_exception) {
-  out << "@interface " << cocoa_prefix_ << tstruct->get_name() << " : ";
+  out << "@interface " << cocoa_prefix_ << prefix << tstruct->get_name() << " : ";
 
   if (is_exception) {
     out << "NSException ";
@@ -712,10 +713,11 @@ void t_cocoa_generator::generate_cocoa_struct_encode_with_coder_method(ofstream 
  */
 void t_cocoa_generator::generate_cocoa_struct_implementation(ofstream &out,
                                                              t_struct* tstruct,
+                                                             std::string prefix,
                                                              bool is_exception,
                                                              bool is_result) {
   indent(out) <<
-    "@implementation " << cocoa_prefix_ << tstruct->get_name() << endl << endl;
+    "@implementation " << cocoa_prefix_ << prefix << tstruct->get_name() << endl << endl;
 
   const vector<t_field*>& members = tstruct->get_members();
   vector<t_field*>::const_iterator m_iter;
@@ -1178,9 +1180,9 @@ void t_cocoa_generator::generate_cocoa_service_helpers(t_service* tservice) {
   vector<t_function*>::iterator f_iter;
   for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
     t_struct* ts = (*f_iter)->get_arglist();
-    generate_cocoa_struct_interface(f_impl_, ts, false);
-    generate_cocoa_struct_implementation(f_impl_, ts, false, false);  
-    generate_function_helpers(*f_iter);
+    generate_cocoa_struct_interface(f_impl_, ts, tservice->get_name(), false);
+    generate_cocoa_struct_implementation(f_impl_, ts, tservice->get_name(), false, false);
+    generate_function_helpers(*f_iter, tservice);
   }
 }
 
@@ -1203,7 +1205,7 @@ string t_cocoa_generator::function_args_helper_struct_type(t_function* tfunction
  *
  * @param tfunction The function
  */
-void t_cocoa_generator::generate_function_helpers(t_function* tfunction) {
+void t_cocoa_generator::generate_function_helpers(t_function* tfunction, t_service* tservice) {
   if (tfunction->is_oneway()) {
     return;
   }
@@ -1224,8 +1226,8 @@ void t_cocoa_generator::generate_function_helpers(t_function* tfunction) {
   }
 
   // generate the result struct
-  generate_cocoa_struct_interface(f_impl_, &result, false);
-  generate_cocoa_struct_implementation(f_impl_, &result, false, true);  
+  generate_cocoa_struct_interface(f_impl_, &result, tservice->get_name(), false);
+  generate_cocoa_struct_implementation(f_impl_, &result, tservice->get_name(), false, true);
 }
 
 
@@ -1336,13 +1338,13 @@ void t_cocoa_generator::generate_cocoa_service_client_implementation(ofstream& o
   vector<t_function*> functions = tservice->get_functions();
   vector<t_function*>::const_iterator f_iter;
   for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
-    string funname = convert_name((*f_iter)->get_name());
+    string funname = (*f_iter)->get_name();
 
     t_function send_function(g_type_void,
-                             string("send_") + convert_name((*f_iter)->get_name()),
+                             string("send_") + (*f_iter)->get_name(),
                              (*f_iter)->get_arglist());
 
-    string argsname = convert_name((*f_iter)->get_name()) + "_args";
+    string argsname = (*f_iter)->get_name() + "_args";
 
     // Open function
     indent(out) <<
@@ -1363,7 +1365,7 @@ void t_cocoa_generator::generate_cocoa_service_client_implementation(ofstream& o
     const vector<t_field*>& fields = arg_struct->get_members();
     vector<t_field*>::const_iterator fld_iter;
     for (fld_iter = fields.begin(); fld_iter != fields.end(); ++fld_iter) {
-      string fieldName = (*fld_iter)->get_name();
+      string fieldName = convert_name((*fld_iter)->get_name());
       if (type_can_be_null((*fld_iter)->get_type())) {
         out << indent() << "if (" << fieldName << " != nil)";
         scope_up(out);
@@ -1419,10 +1421,9 @@ void t_cocoa_generator::generate_cocoa_service_client_implementation(ofstream& o
         indent() << "}" << endl;
 
       // FIXME - could optimize here to reduce creation of temporary objects.
-      string resultname = function_result_helper_struct_type(*f_iter);
+      string resultname = cocoa_prefix_ + tservice-> get_name() + function_result_helper_struct_type(*f_iter);
       out <<
-        indent() << cocoa_prefix_ << resultname << " * result = [[[" << cocoa_prefix_ <<
-        resultname << " alloc] init] autorelease_stub];" << endl;
+        indent() << resultname << " * result = [[[" << resultname << " alloc] init] autorelease_stub];" << endl;
       indent(out) << "[result read: inProtocol];" << endl;
       indent(out) << "[inProtocol readMessageEnd];" << endl;
 
@@ -1469,7 +1470,7 @@ void t_cocoa_generator::generate_cocoa_service_client_implementation(ofstream& o
     // Declare the function arguments
     bool first = true;
     for (fld_iter = fields.begin(); fld_iter != fields.end(); ++fld_iter) {
-      string fieldName = (*fld_iter)->get_name();
+      string fieldName = convert_name((*fld_iter)->get_name());
       out << " ";
       if (first) {
         first = false;
@@ -1590,12 +1591,12 @@ void t_cocoa_generator::generate_cocoa_service_server_implementation(ofstream& o
     string funname = convert_name((*f_iter)->get_name());
     out << indent() << "- (void) process_" << funname << "_withSequenceID: (int32_t) seqID inProtocol: (id<TProtocol>) inProtocol outProtocol: (id<TProtocol>) outProtocol" << endl;
     scope_up(out);
-    string argstype = cocoa_prefix_ + function_args_helper_struct_type(*f_iter);
+    string argstype = cocoa_prefix_ + tservice->get_name() +function_args_helper_struct_type(*f_iter);
     out << indent() << argstype << " * args = [[" << argstype << " alloc] init];" << endl;
     out << indent() << "[args read: inProtocol];" << endl;
     out << indent() << "[inProtocol readMessageEnd];" << endl;
     
-    string resulttype = cocoa_prefix_ + function_result_helper_struct_type(*f_iter);
+    string resulttype = cocoa_prefix_ + tservice->get_name() + function_result_helper_struct_type(*f_iter);
     out << indent() << resulttype << " * result = [[" << resulttype << " alloc] init];" << endl;
 
     // make the call to the actual service object
@@ -1610,7 +1611,7 @@ void t_cocoa_generator::generate_cocoa_service_server_implementation(ofstream& o
     vector<t_field*>::const_iterator fld_iter;
     bool first = true;
     for (fld_iter = fields.begin(); fld_iter != fields.end(); ++fld_iter) {
-      string fieldName = (*fld_iter)->get_name();
+      string fieldName = convert_name((*fld_iter)->get_name());
       if (first) {
         first = false;
         out << ": [args " << fieldName << "]";
@@ -2020,17 +2021,17 @@ void t_cocoa_generator::generate_serialize_container(ofstream& out,
     indent(out) <<
       "[outProtocol writeMapBeginWithKeyType: " <<
       type_to_enum(((t_map*)ttype)->get_key_type()) << " valueType: " <<
-      type_to_enum(((t_map*)ttype)->get_val_type()) << " size: [" <<
+      type_to_enum(((t_map*)ttype)->get_val_type()) << " size: [(NSDictionary *)" <<
       fieldName << " count]];" << endl;
   } else if (ttype->is_set()) {
     indent(out) <<
       "[outProtocol writeSetBeginWithElementType: " <<
-      type_to_enum(((t_set*)ttype)->get_elem_type()) << " size: [" <<
+      type_to_enum(((t_set*)ttype)->get_elem_type()) << " size: [(NSSet *)" <<
       fieldName << " count]];" << endl;
   } else if (ttype->is_list()) {
     indent(out) <<
       "[outProtocol writeListBeginWithElementType: " <<
-      type_to_enum(((t_list*)ttype)->get_elem_type()) << " size: [" <<
+      type_to_enum(((t_list*)ttype)->get_elem_type()) << " size: [(NSArray *)" <<
       fieldName << " count]];" << endl;
   }
 
@@ -2050,7 +2051,7 @@ void t_cocoa_generator::generate_serialize_container(ofstream& out,
     key = tmp("i");
     indent(out) << "int " << key << ";" << endl;
     indent(out) <<
-      "for (" << key << " = 0; " << key << " < [" << fieldName << " count]; " << key << "++)" << endl;
+      "for (" << key << " = 0; " << key << " < [(NSArray *)" << fieldName << " count]; " << key << "++)" << endl;
   }
 
     scope_up(out);
@@ -2668,7 +2669,10 @@ string t_cocoa_generator::call_field_setter(t_field* tfield, string fieldName) {
 }
 
 string t_cocoa_generator::convert_name(std::string fieldName) {
-  return fieldName == "description" ? "description" + keyword_postfix_ : fieldName;
+  if(fieldName == "description" || fieldName == "used" || fieldName == "id" || fieldName == "no"){
+    return fieldName + keyword_postfix_;
+  }
+  return fieldName;
 }
 
 
