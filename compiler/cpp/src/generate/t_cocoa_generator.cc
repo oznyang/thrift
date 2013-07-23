@@ -360,7 +360,7 @@ void t_cocoa_generator::generate_enum(t_enum* tenum) {
  */
 void t_cocoa_generator::generate_consts(std::vector<t_const*> consts) {
   std::ostringstream const_interface;
-  string constants_class_name = cocoa_prefix_ + program_name_ + "Constants";
+  string constants_class_name = cocoa_prefix_ + "Constants";
 
   const_interface << "@interface " << constants_class_name << " : NSObject ";
   scope_up(const_interface);
@@ -385,7 +385,7 @@ void t_cocoa_generator::generate_consts(std::vector<t_const*> consts) {
     string name = (*c_iter)->get_name();
     t_type* type = (*c_iter)->get_type();
     f_impl_ <<
-      "static " << type_name(type) << " " << cocoa_prefix_ << name;
+      "static " << type_name(type) << " " << cocoa_prefix_ << "_" << name;
     if (!type->is_container() && !type->is_struct()) {
       f_impl_ << " = " << render_const_value(f_impl_, type, (*c_iter)->get_value());
     }
@@ -419,7 +419,7 @@ void t_cocoa_generator::generate_consts(std::vector<t_const*> consts) {
     f_impl_ <<
       "+ (" << type_name(type) << ") " << name;
     scope_up(f_impl_);
-    indent(f_impl_) << "return " << cocoa_prefix_ << name << ";" << endl;
+    indent(f_impl_) << "return " << cocoa_prefix_ << "_" << name << ";" << endl;
     scope_down(f_impl_);
   }
 
