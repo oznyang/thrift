@@ -360,6 +360,7 @@ string t_java_generator::java_type_imports() {
     "import java.util.ArrayList;\n" +
     "import java.util.Map;\n" +
     "import java.util.HashMap;\n" +
+    "import java.util.LinkedHashMap;\n" +
     "import java.util.EnumMap;\n" +
     "import java.util.Set;\n" +
     "import java.util.HashSet;\n" +
@@ -3190,7 +3191,7 @@ string t_java_generator::type_name(t_type* ttype, bool in_container, bool in_ini
   } else if (ttype->is_map()) {
     t_map* tmap = (t_map*) ttype;
     if (in_init) {
-      prefix = "HashMap";
+      prefix = "LinkedHashMap";
     } else {
       prefix = "Map";
     }
