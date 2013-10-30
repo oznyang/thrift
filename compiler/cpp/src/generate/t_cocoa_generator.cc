@@ -360,7 +360,7 @@ void t_cocoa_generator::generate_enum(t_enum* tenum) {
  */
 void t_cocoa_generator::generate_consts(std::vector<t_const*> consts) {
   std::ostringstream const_interface;
-  string constants_class_name = cocoa_prefix_ + "Constants";
+  string constants_class_name = program_name_ + "Constants";
 
   const_interface << "@interface " << constants_class_name << " : NSObject ";
   scope_up(const_interface);
@@ -2669,7 +2669,7 @@ string t_cocoa_generator::call_field_setter(t_field* tfield, string fieldName) {
 }
 
 string t_cocoa_generator::convert_name(std::string fieldName) {
-  if(fieldName == "description" || fieldName == "used" || fieldName == "id" || fieldName == "no"){
+  if(fieldName == "description" || fieldName == "used" || fieldName == "id" || fieldName == "no" || fieldName == "attributes" || fieldName == "attribute"){
     return fieldName + keyword_postfix_;
   }
   return fieldName;
