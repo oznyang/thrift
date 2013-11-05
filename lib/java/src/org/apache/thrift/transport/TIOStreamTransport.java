@@ -19,12 +19,10 @@
 
 package org.apache.thrift.transport;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.logging.Logger;
 
 /**
  * This is the most commonly used base transport. It takes an InputStream
@@ -35,7 +33,7 @@ import java.io.OutputStream;
  */
 public class TIOStreamTransport extends TTransport {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(TIOStreamTransport.class.getName());
+  private static final Logger LOGGER = Logger.getLogger(TIOStreamTransport.class.getName());
 
   /** Underlying inputStream */
   protected InputStream inputStream_ = null;
@@ -101,7 +99,7 @@ public class TIOStreamTransport extends TTransport {
       try {
         inputStream_.close();
       } catch (IOException iox) {
-        LOGGER.warn("Error closing input stream.", iox);
+          LOGGER.warning("Error closing input stream " + iox);
       }
       inputStream_ = null;
     }
@@ -109,7 +107,7 @@ public class TIOStreamTransport extends TTransport {
       try {
         outputStream_.close();
       } catch (IOException iox) {
-        LOGGER.warn("Error closing output stream.", iox);
+          LOGGER.warning("Error closing output stream. " + iox);
       }
       outputStream_ = null;
     }
