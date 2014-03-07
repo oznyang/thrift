@@ -82,35 +82,6 @@ public class THttpClient extends TTransport {
   private final HttpHost host;
   
   private final HttpClient client;
-  
-  public static class Factory extends TTransportFactory {
-    
-    private final String url;
-    private final HttpClient client;
-    
-    public Factory(String url) {
-      this.url = url;
-      this.client = null;
-    }
-
-    public Factory(String url, HttpClient client) {
-      this.url = url;
-      this.client = client;
-    }
-    
-    @Override
-    public TTransport getTransport(TTransport trans) {
-      try {
-        if (null != client) {
-          return new THttpClient(url, client);
-        } else {
-          return new THttpClient(url);
-        }
-      } catch (TTransportException tte) {
-        return null;
-      }
-    }
-  }
 
   public THttpClient(String url) throws TTransportException {
     try {

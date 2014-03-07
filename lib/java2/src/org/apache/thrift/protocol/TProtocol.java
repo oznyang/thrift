@@ -22,8 +22,6 @@ package org.apache.thrift.protocol;
 import java.nio.ByteBuffer;
 
 import org.apache.thrift.TException;
-import org.apache.thrift.scheme.IScheme;
-import org.apache.thrift.scheme.StandardScheme;
 import org.apache.thrift.transport.TTransport;
 
 /**
@@ -152,11 +150,4 @@ public abstract class TProtocol {
    * be implemented for stateful protocols.
    */
   public void reset() {}
-  
-  /**
-   * Scheme accessor
-   */
-  public Class<? extends IScheme> getScheme() {
-    return StandardScheme.class;
-  }
 }
