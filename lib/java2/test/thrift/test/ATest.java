@@ -18,7 +18,7 @@ public class ATest implements TBase {
 
     private static final long serialVersionUID = 4033557811436630869L;
 
-    public static TField[] _META = new TField[]{new TField("string_thing", TType.STRING, (short) 1), new TField("byte_thing", TType.BYTE, (short) 4)};
+    public static TField[] _META = {new TField("string_thing", TType.STRING, (short) 1), new TField("byte_thing", TType.BYTE, (short) 4)};
 
     private String string_thing;
     private Byte byte_thing;// required

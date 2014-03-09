@@ -28,6 +28,12 @@ public class TField {
     this("", TType.STOP, (short)0);
   }
 
+  public TField(byte t, int i) {
+    name = "";
+    type = t;
+    id = (short)i;
+  }
+
   public TField(String n, byte t, short i) {
     name = n;
     type = t;

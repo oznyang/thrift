@@ -58,14 +58,16 @@ public abstract class TServiceClient {
     return this.oprot_;
   }
 
-  protected void sendBase(String methodName, TBase args) throws TException {
+  protected void sendBegin(String methodName) throws TException {
     oprot_.writeMessageBegin(new TMessage(methodName, TMessageType.CALL, ++seqid_));
-    args.write(oprot_);
+  }
+
+  protected void sendEnd() throws TException {
     oprot_.writeMessageEnd();
     oprot_.getTransport().flush();
   }
 
-  protected void receiveBase(TBase result, String methodName) throws TException {
+  protected void receiveBegin() throws TException {
     TMessage msg = iprot_.readMessageBegin();
     if (msg.type == TMessageType.EXCEPTION) {
       TApplicationException x = TApplicationException.read(iprot_);
@@ -73,9 +75,11 @@ public abstract class TServiceClient {
       throw x;
     }
     if (msg.seqid != seqid_) {
-      throw new TApplicationException(TApplicationException.BAD_SEQUENCE_ID, methodName + " failed: out of sequence response");
+      throw new TApplicationException(TApplicationException.BAD_SEQUENCE_ID, "Invoke failed: out of sequence response");
     }
-    result.read(iprot_);
+  }
+
+  protected void receiveEnd() throws TException {
     iprot_.readMessageEnd();
   }
 }
