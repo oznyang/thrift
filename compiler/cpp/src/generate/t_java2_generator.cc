@@ -37,9 +37,9 @@ using namespace std;
  * @author <a href="mailto:oxsean@gmail.com">sean yang</a>
  * @version V1.0, 14-3-8
  */
-class t_javame_generator : public t_oop_generator {
+class t_java2_generator : public t_oop_generator {
  public:
-  t_javame_generator(
+  t_java2_generator(
       t_program* program,
       const std::map<std::string, std::string>& parsed_options,
       const std::string& option_string)
@@ -48,7 +48,7 @@ class t_javame_generator : public t_oop_generator {
     (void) parsed_options;
     (void) option_string;
     std::map<std::string, std::string>::const_iterator iter;
-    out_dir_base_ = "gen-javame";
+    out_dir_base_ = "gen-java2";
   }
 
   /**
@@ -244,7 +244,7 @@ class t_javame_generator : public t_oop_generator {
  *
  * @param tprogram The program to generate
  */
-void t_javame_generator::init_generator() {
+void t_java2_generator::init_generator() {
   // Make output directory
   MKDIR(get_out_dir().c_str());
   package_name_ = program_->get_namespace("java");
@@ -270,7 +270,7 @@ void t_javame_generator::init_generator() {
  *
  * @return String of the package, i.e. "package org.apache.thriftdemo;"
  */
-string t_javame_generator::java_package() {
+string t_java2_generator::java_package() {
   if (!package_name_.empty()) {
     return string("package ") + package_name_ + ";\n\n";
   }
@@ -282,12 +282,11 @@ string t_javame_generator::java_package() {
  *
  * @return List of imports for Java types that are used in here
  */
-string t_javame_generator::java_type_imports() {
+string t_java2_generator::java_type_imports() {
   return
     string() +
-    "import java.util.Hashtable;\n" +
-    "import java.util.Vector;\n" +
-    "import java.util.Enumeration;\n\n";
+    "import java.util.*;\n" +
+    "import java.nio.ByteBuffer;\n\n";
 }
 
 /**
@@ -295,11 +294,10 @@ string t_javame_generator::java_type_imports() {
  *
  * @return List of imports necessary for thrift
  */
-string t_javame_generator::java_thrift_imports() {
+string t_java2_generator::java_thrift_imports() {
   return
     string() +
     "import org.apache.thrift.*;\n" +
-    "import org.apache.thrift.meta_data.*;\n" +
     "import org.apache.thrift.transport.*;\n" +
     "import org.apache.thrift.protocol.*;\n\n";
 }
@@ -307,7 +305,7 @@ string t_javame_generator::java_thrift_imports() {
 /**
  * Nothing in Java
  */
-void t_javame_generator::close_generator() {}
+void t_java2_generator::close_generator() {}
 
 /**
  * Generates a typedef. This is not done in Java, since it does
@@ -316,7 +314,7 @@ void t_javame_generator::close_generator() {}
  *
  * @param ttypedef The type definition
  */
-void t_javame_generator::generate_typedef(t_typedef* ttypedef) {
+void t_java2_generator::generate_typedef(t_typedef* ttypedef) {
   (void) ttypedef;
 }
 
@@ -325,7 +323,7 @@ void t_javame_generator::generate_typedef(t_typedef* ttypedef) {
  *
  * @param tenum The enumeration
  */
-void t_javame_generator::generate_enum(t_enum* tenum) {
+void t_java_generator::generate_enum(t_enum* tenum) {
   // Make output file
   string f_enum_name = package_dir_+"/"+(tenum->get_name())+".java";
   ofstream f_enum;
@@ -334,24 +332,35 @@ void t_javame_generator::generate_enum(t_enum* tenum) {
   // Comment and package it
   f_enum <<
     autogen_comment() <<
-    java_package();
+    java_package() << endl;
+
+  // Add java imports
+  f_enum << string() +
+    "import java.util.Map;\n" +
+    "import java.util.HashMap;\n" +
+    "import org.apache.thrift.TEnum;" << endl << endl;
 
   generate_java_doc(f_enum, tenum);
   indent(f_enum) <<
-    "public class " << tenum->get_name() << " implements org.apache.thrift.TEnum ";
+    "public enum " << tenum->get_name() << " implements org.apache.thrift.TEnum ";
   scope_up(f_enum);
-  f_enum << endl;
 
   vector<t_enum_value*> constants = tenum->get_constants();
   vector<t_enum_value*>::iterator c_iter;
+  bool first = true;
   for (c_iter = constants.begin(); c_iter != constants.end(); ++c_iter) {
     int value = (*c_iter)->get_value();
+
+    if (first) {
+      first = false;
+    } else {
+      f_enum << "," << endl;
+    }
+
     generate_java_doc(f_enum, *c_iter);
-    indent(f_enum) << "public static final " << tenum->get_name() <<
-      " " << (*c_iter)->get_name() << " = new " << tenum->get_name() <<
-      "(" << value << ");" << endl;
+    indent(f_enum) << (*c_iter)->get_name() << "(" << value << ")";
   }
-  f_enum << endl;
+  f_enum << ";" << endl << endl;
 
   // Field for thriftCode
   indent(f_enum) << "private final int value;" << endl << endl;
@@ -360,17 +369,10 @@ void t_javame_generator::generate_enum(t_enum* tenum) {
   indent(f_enum) << "  this.value = value;" <<endl;
   indent(f_enum) << "}" << endl << endl;
 
-  indent(f_enum) << "/**" << endl;
-  indent(f_enum) << " * Get the integer value of this enum value, as defined in the Thrift IDL." << endl;
-  indent(f_enum) << " */" << endl;
   indent(f_enum) << "public int getValue() {" << endl;
   indent(f_enum) << "  return value;" <<endl;
   indent(f_enum) << "}" << endl << endl;
 
-  indent(f_enum) << "/**" << endl;
-  indent(f_enum) << " * Find a the enum type by its integer value, as defined in the Thrift IDL." << endl;
-  indent(f_enum) << " * @return null if the value is not found." << endl;
-  indent(f_enum) << " */" << endl;
   indent(f_enum) << "public static "+ tenum->get_name() + " findByValue(int value) { " << endl;
 
   indent_up();
@@ -383,14 +385,14 @@ void t_javame_generator::generate_enum(t_enum* tenum) {
     indent(f_enum) << "case " << value << ":" << endl;
     indent(f_enum) << "  return " << (*c_iter)->get_name() << ";" << endl;
   }
-  
+
   indent(f_enum) << "default:" << endl;
-  indent(f_enum) << "  return null;" << endl;  
+  indent(f_enum) << "  return null;" << endl;
 
   indent_down();
 
   indent(f_enum) << "}" << endl;
-  
+
   indent_down();
 
   indent(f_enum) << "}" << endl;
@@ -403,12 +405,12 @@ void t_javame_generator::generate_enum(t_enum* tenum) {
 /**
  * Generates a class that holds all the constants.
  */
-void t_javame_generator::generate_consts(std::vector<t_const*> consts) {
+void t_java_generator::generate_consts(std::vector<t_const*> consts) {
   if (consts.empty()) {
     return;
   }
 
-  string f_consts_name = package_dir_+"/Constants.java";
+  string f_consts_name = package_dir_+ '/' + program_name_ + "Constants.java";
   ofstream f_consts;
   f_consts.open(f_consts_name.c_str());
 
@@ -419,11 +421,12 @@ void t_javame_generator::generate_consts(std::vector<t_const*> consts) {
     java_type_imports();
 
   f_consts <<
-    "public class Constants {" << endl <<
+    "public class " << program_name_ << "Constants {" << endl <<
     endl;
   indent_up();
   vector<t_const*>::iterator c_iter;
   for (c_iter = consts.begin(); c_iter != consts.end(); ++c_iter) {
+    generate_java_doc(f_consts, (*c_iter));
     print_const_value(f_consts,
                       (*c_iter)->get_name(),
                       (*c_iter)->get_type(),
@@ -431,8 +434,7 @@ void t_javame_generator::generate_consts(std::vector<t_const*> consts) {
                       false);
   }
   indent_down();
-  indent(f_consts) <<
-    "}" << endl;
+  indent(f_consts) << "}" << endl;
   f_consts.close();
 }
 
@@ -442,7 +444,7 @@ void t_javame_generator::generate_consts(std::vector<t_const*> consts) {
  * is NOT performed in this function as it is always run beforehand using the
  * validate_types method in main.cc
  */
-void t_javame_generator::print_const_value(std::ofstream& out, string name, t_type* type, t_const_value* value, bool in_static, bool defval) {
+void t_java2_generator::print_const_value(std::ofstream& out, string name, t_type* type, t_const_value* value, bool in_static, bool defval) {
   type = get_true_type(type);
 
   indent(out);
@@ -541,7 +543,7 @@ void t_javame_generator::print_const_value(std::ofstream& out, string name, t_ty
   }
 }
 
-string t_javame_generator::render_const_value(ofstream& out, string name, t_type* type, t_const_value* value) {
+string t_java2_generator::render_const_value(ofstream& out, string name, t_type* type, t_const_value* value) {
   (void) name;
   type = get_true_type(type);
   std::ostringstream render;
@@ -588,7 +590,7 @@ string t_javame_generator::render_const_value(ofstream& out, string name, t_type
   return render.str();
 }
 
-string t_javame_generator::box_type(t_type* type, string value) {
+string t_java2_generator::box_type(t_type* type, string value) {
   if (type->is_base_type()) {
     switch (((t_base_type*)type)->get_base()) {
     case t_base_type::TYPE_BOOL:
@@ -616,7 +618,7 @@ string t_javame_generator::box_type(t_type* type, string value) {
  *
  * @param tstruct The struct definition
  */
-void t_javame_generator::generate_struct(t_struct* tstruct) {
+void t_java2_generator::generate_struct(t_struct* tstruct) {
   if (tstruct->is_union()) {
     generate_java_union(tstruct);
   } else {
@@ -629,7 +631,7 @@ void t_javame_generator::generate_struct(t_struct* tstruct) {
  *
  * @param tstruct The struct definition
  */
-void t_javame_generator::generate_xception(t_struct* txception) {
+void t_java2_generator::generate_xception(t_struct* txception) {
   generate_java_struct(txception, true);
 }
 
@@ -639,7 +641,7 @@ void t_javame_generator::generate_xception(t_struct* txception) {
  *
  * @param tstruct The struct definition
  */
-void t_javame_generator::generate_java_struct(t_struct* tstruct,
+void t_java2_generator::generate_java_struct(t_struct* tstruct,
                                             bool is_exception) {
   // Make output file
   string f_struct_name = package_dir_+"/"+(tstruct->get_name())+".java";
@@ -663,7 +665,7 @@ void t_javame_generator::generate_java_struct(t_struct* tstruct,
  *
  * @param tstruct The struct definition
  */
-void t_javame_generator::generate_java_union(t_struct* tstruct) {
+void t_java2_generator::generate_java_union(t_struct* tstruct) {
   // Make output file
   string f_struct_name = package_dir_+"/"+(tstruct->get_name())+".java";
   ofstream f_struct;
@@ -715,7 +717,7 @@ void t_javame_generator::generate_java_union(t_struct* tstruct) {
   f_struct.close();
 }
 
-void t_javame_generator::generate_union_constructor(ofstream& out, t_struct* tstruct) {
+void t_java2_generator::generate_union_constructor(ofstream& out, t_struct* tstruct) {
   indent(out) << "public " << type_name(tstruct) << "() {" << endl;
   indent(out) << "  super();" << endl;
   indent(out) << "}" << endl << endl;
@@ -744,7 +746,7 @@ void t_javame_generator::generate_union_constructor(ofstream& out, t_struct* tst
   }
 }
 
-void t_javame_generator::generate_union_getters_and_setters(ofstream& out, t_struct* tstruct) {
+void t_java2_generator::generate_union_getters_and_setters(ofstream& out, t_struct* tstruct) {
   const vector<t_field*>& members = tstruct->get_members();
   vector<t_field*>::const_iterator m_iter;
   
@@ -781,7 +783,7 @@ void t_javame_generator::generate_union_getters_and_setters(ofstream& out, t_str
   }
 }
 
-void t_javame_generator::generate_union_abstract_methods(ofstream& out, t_struct* tstruct) {
+void t_java2_generator::generate_union_abstract_methods(ofstream& out, t_struct* tstruct) {
   generate_check_type(out, tstruct);
   out << endl;
   generate_read_value(out, tstruct);
@@ -794,7 +796,7 @@ void t_javame_generator::generate_union_abstract_methods(ofstream& out, t_struct
   out << endl;
 }
 
-void t_javame_generator::generate_check_type(ofstream& out, t_struct* tstruct) {
+void t_java2_generator::generate_check_type(ofstream& out, t_struct* tstruct) {
   indent(out) << "protected void checkType(_Fields setField, Object value) throws ClassCastException {" << endl;
   indent_up();
 
@@ -827,7 +829,7 @@ void t_javame_generator::generate_check_type(ofstream& out, t_struct* tstruct) {
   indent(out) << "}" << endl;
 }
 
-void t_javame_generator::generate_read_value(ofstream& out, t_struct* tstruct) {
+void t_java2_generator::generate_read_value(ofstream& out, t_struct* tstruct) {
   indent(out) << "protected Object readValue(TProtocol iprot, TField field) throws TException {" << endl;
 
   indent_up();
@@ -877,7 +879,7 @@ void t_javame_generator::generate_read_value(ofstream& out, t_struct* tstruct) {
   indent(out) << "}" << endl;
 }
 
-void t_javame_generator::generate_write_value(ofstream& out, t_struct* tstruct) {
+void t_java2_generator::generate_write_value(ofstream& out, t_struct* tstruct) {
   indent(out) << "protected void writeValue(TProtocol oprot) throws TException {" << endl;
 
   indent_up();
@@ -913,7 +915,7 @@ void t_javame_generator::generate_write_value(ofstream& out, t_struct* tstruct) 
   indent(out) << "}" << endl;
 }
 
-void t_javame_generator::generate_get_field_desc(ofstream& out, t_struct* tstruct) {
+void t_java2_generator::generate_get_field_desc(ofstream& out, t_struct* tstruct) {
   indent(out) << "protected TField getFieldDesc(_Fields setField) {" << endl;
   indent_up();
   
@@ -939,14 +941,14 @@ void t_javame_generator::generate_get_field_desc(ofstream& out, t_struct* tstruc
   indent(out) << "}" << endl;
 }
 
-void t_javame_generator::generate_get_struct_desc(ofstream& out, t_struct* tstruct) {
+void t_java2_generator::generate_get_struct_desc(ofstream& out, t_struct* tstruct) {
   (void) tstruct;
   indent(out) << "protected TStruct getStructDesc() {" << endl;
   indent(out) << "  return STRUCT_DESC;" << endl;
   indent(out) << "}" << endl;
 }
 
-void t_javame_generator::generate_union_comparisons(ofstream& out, t_struct* tstruct) {
+void t_java2_generator::generate_union_comparisons(ofstream& out, t_struct* tstruct) {
   // equality
   indent(out) << "public boolean equals(Object other) {" << endl;
   indent(out) << "  if (other instanceof " << tstruct->get_name() << ") {" << endl;
@@ -973,7 +975,7 @@ void t_javame_generator::generate_union_comparisons(ofstream& out, t_struct* tst
   out << endl;
 }
 
-void t_javame_generator::generate_union_hashcode(ofstream& out, t_struct* tstruct) {
+void t_java2_generator::generate_union_hashcode(ofstream& out, t_struct* tstruct) {
   (void) tstruct;
   indent(out) << "/**" << endl;
   indent(out) << " * If you'd like this to perform more respectably, use the hashcode generator option." << endl;
@@ -993,7 +995,7 @@ void t_javame_generator::generate_union_hashcode(ofstream& out, t_struct* tstruc
  * @param in_class     If inside a class, needs to be static class
  * @param is_result    If this is a result it needs a different writer
  */
-void t_javame_generator::generate_java_struct_definition(ofstream &out,
+void t_java2_generator::generate_java_struct_definition(ofstream &out,
                                                        t_struct* tstruct,
                                                        bool is_exception,
                                                        bool in_class,
@@ -1172,7 +1174,7 @@ void t_javame_generator::generate_java_struct_definition(ofstream &out,
  *
  * @param tstruct The struct definition
  */
-void t_javame_generator::generate_java_struct_equality(ofstream& out,
+void t_java2_generator::generate_java_struct_equality(ofstream& out,
                                                      t_struct* tstruct) {
   out << indent() << "public boolean equals(Object that) {" << endl;
   indent_up();
@@ -1253,7 +1255,7 @@ void t_javame_generator::generate_java_struct_equality(ofstream& out,
   indent(out) << "}" << endl << endl;
 }
 
-void t_javame_generator::generate_java_struct_compare_to(ofstream& out, t_struct* tstruct) {
+void t_java2_generator::generate_java_struct_compare_to(ofstream& out, t_struct* tstruct) {
   indent(out) << "public int compareTo(Object otherObject) {" << endl;
   //  indent(out) << "public int compareTo(" << type_name(tstruct) << " other) {" << endl;
   indent_up();
@@ -1300,7 +1302,7 @@ void t_javame_generator::generate_java_struct_compare_to(ofstream& out, t_struct
  *
  * @param tstruct The struct definition
  */
-void t_javame_generator::generate_java_struct_reader(ofstream& out,
+void t_java2_generator::generate_java_struct_reader(ofstream& out,
                                                    t_struct* tstruct) {
   out <<
     indent() << "public void read(TProtocol iprot) throws TException {" << endl;
@@ -1385,7 +1387,7 @@ void t_javame_generator::generate_java_struct_reader(ofstream& out,
 
 // generates java method to perform various checks
 // (e.g. check that all required fields are set)
-void t_javame_generator::generate_java_validator(ofstream& out,
+void t_java2_generator::generate_java_validator(ofstream& out,
                                                    t_struct* tstruct){
   indent(out) << "public void validate() throws TException {" << endl;
   indent_up();
@@ -1412,7 +1414,7 @@ void t_javame_generator::generate_java_validator(ofstream& out,
  *
  * @param tstruct The struct definition
  */
-void t_javame_generator::generate_java_struct_writer(ofstream& out,
+void t_java2_generator::generate_java_struct_writer(ofstream& out,
                                                    t_struct* tstruct) {
   out <<
     indent() << "public void write(TProtocol oprot) throws TException {" << endl;
@@ -1477,7 +1479,7 @@ void t_javame_generator::generate_java_struct_writer(ofstream& out,
  *
  * @param tstruct The struct definition
  */
-void t_javame_generator::generate_java_struct_result_writer(ofstream& out,
+void t_java2_generator::generate_java_struct_result_writer(ofstream& out,
                                                           t_struct* tstruct) {
   out <<
     indent() << "public void write(TProtocol oprot) throws TException {" << endl;
@@ -1528,7 +1530,7 @@ void t_javame_generator::generate_java_struct_result_writer(ofstream& out,
     endl;
 }
 
-void t_javame_generator::generate_reflection_getters(ostringstream& out, t_type* type, string field_name, string cap_name) {
+void t_java2_generator::generate_reflection_getters(ostringstream& out, t_type* type, string field_name, string cap_name) {
   indent(out) << "case " << constant_name(field_name) << ":" << endl;
   indent_up();
 
@@ -1543,7 +1545,7 @@ void t_javame_generator::generate_reflection_getters(ostringstream& out, t_type*
   indent_down();
 }
 
-void t_javame_generator::generate_reflection_setters(ostringstream& out, t_type* type, string field_name, string cap_name) {
+void t_java2_generator::generate_reflection_setters(ostringstream& out, t_type* type, string field_name, string cap_name) {
   indent(out) << "case " << constant_name(field_name) << ":" << endl;
   indent_up();
   indent(out) << "if (value == null) {" << endl;
@@ -1556,7 +1558,7 @@ void t_javame_generator::generate_reflection_setters(ostringstream& out, t_type*
   indent_down();
 }
 
-void t_javame_generator::generate_generic_field_getters_setters(std::ofstream& out, t_struct* tstruct) {
+void t_java2_generator::generate_generic_field_getters_setters(std::ofstream& out, t_struct* tstruct) {
   (void) out;
   std::ostringstream getter_stream;
   std::ostringstream setter_stream;
@@ -1584,7 +1586,7 @@ void t_javame_generator::generate_generic_field_getters_setters(std::ofstream& o
  *
  * @param tstruct The struct definition
  */
-void t_javame_generator::generate_java_bean_boilerplate(ofstream& out,
+void t_java2_generator::generate_java_bean_boilerplate(ofstream& out,
                                                       t_struct* tstruct) {
   const vector<t_field*>& fields = tstruct->get_members();
   vector<t_field*>::const_iterator f_iter;
@@ -1740,7 +1742,7 @@ void t_javame_generator::generate_java_bean_boilerplate(ofstream& out,
  *
  * @param tstruct The struct definition
  */
-void t_javame_generator::generate_java_struct_tostring(ofstream& out,
+void t_java2_generator::generate_java_struct_tostring(ofstream& out,
                                                      t_struct* tstruct) {
   out << indent() << "public String toString() {" << endl;
   indent_up();
@@ -1804,7 +1806,7 @@ void t_javame_generator::generate_java_struct_tostring(ofstream& out,
  * Returns a string with the java representation of the given thrift type
  * (e.g. for the type struct it returns "TType.STRUCT")
  */
-std::string t_javame_generator::get_java_type_string(t_type* type) {
+std::string t_java2_generator::get_java_type_string(t_type* type) {
   if (type->is_list()){
     return "TType.LIST";
   } else if (type->is_map()) {
@@ -1827,14 +1829,14 @@ std::string t_javame_generator::get_java_type_string(t_type* type) {
       case t_base_type::TYPE_I32    : return       "TType.I32"; break;
       case t_base_type::TYPE_I64    : return       "TType.I64"; break;
       case t_base_type::TYPE_DOUBLE : return    "TType.DOUBLE"; break;
-      default : throw std::runtime_error("Unknown thrift type \"" + type->get_name() + "\" passed to t_javame_generator::get_java_type_string!"); break; // This should never happen!
+      default : throw std::runtime_error("Unknown thrift type \"" + type->get_name() + "\" passed to t_java2_generator::get_java_type_string!"); break; // This should never happen!
     }
   } else {
-    throw std::runtime_error("Unknown thrift type \"" + type->get_name() + "\" passed to t_javame_generator::get_java_type_string!"); // This should never happen!
+    throw std::runtime_error("Unknown thrift type \"" + type->get_name() + "\" passed to t_java2_generator::get_java_type_string!"); // This should never happen!
   }
 }
 
-void t_javame_generator::generate_field_value_meta_data(std::ofstream& out, t_type* type){
+void t_java2_generator::generate_field_value_meta_data(std::ofstream& out, t_type* type){
   out << endl;
   indent_up();
   indent_up();
@@ -1879,7 +1881,7 @@ void t_javame_generator::generate_field_value_meta_data(std::ofstream& out, t_ty
  *
  * @param tservice The service definition
  */
-void t_javame_generator::generate_service(t_service* tservice) {
+void t_java2_generator::generate_service(t_service* tservice) {
   // Make output file
   string f_service_name = package_dir_+"/"+service_name_+".java";
   f_service_.open(f_service_name.c_str());
@@ -1912,7 +1914,7 @@ void t_javame_generator::generate_service(t_service* tservice) {
  *
  * @param tservice The service to generate a header definition for
  */
-void t_javame_generator::generate_primitive_service_interface(t_service* tservice) {
+void t_java2_generator::generate_primitive_service_interface(t_service* tservice) {
   f_service_ << indent() << "public interface Iface extends " <<
     service_name_ << "Iface { }" << endl << endl;
 
@@ -1947,7 +1949,7 @@ void t_javame_generator::generate_primitive_service_interface(t_service* tservic
  *
  * @param tservice The service to generate a header definition for
  */
-void t_javame_generator::generate_service_interface(t_service* tservice) {
+void t_java2_generator::generate_service_interface(t_service* tservice) {
   string extends = "";
   string extends_iface = "";
   if (tservice->get_extends() != NULL) {
@@ -1974,7 +1976,7 @@ void t_javame_generator::generate_service_interface(t_service* tservice) {
  *
  * @param tservice The service
  */
-void t_javame_generator::generate_service_helpers(t_service* tservice) {
+void t_java2_generator::generate_service_helpers(t_service* tservice) {
   vector<t_function*> functions = tservice->get_functions();
   vector<t_function*>::iterator f_iter;
   for (f_iter = functions.begin(); f_iter != functions.end(); ++f_iter) {
@@ -1989,7 +1991,7 @@ void t_javame_generator::generate_service_helpers(t_service* tservice) {
  *
  * @param tservice The service to generate a server for.
  */
-void t_javame_generator::generate_service_client(t_service* tservice) {
+void t_java2_generator::generate_service_client(t_service* tservice) {
   string extends = "";
   string extends_client = "";
   if (tservice->get_extends() != NULL) {
@@ -2189,7 +2191,7 @@ void t_javame_generator::generate_service_client(t_service* tservice) {
  *
  * @param tservice The service to generate a server for.
  */
-void t_javame_generator::generate_service_server(t_service* tservice) {
+void t_java2_generator::generate_service_server(t_service* tservice) {
   // Generate the dispatch methods
   vector<t_function*> functions = tservice->get_functions();
   vector<t_function*>::iterator f_iter;
@@ -2289,7 +2291,7 @@ void t_javame_generator::generate_service_server(t_service* tservice) {
  *
  * @param tfunction The function
  */
-void t_javame_generator::generate_function_helpers(t_function* tfunction) {
+void t_java2_generator::generate_function_helpers(t_function* tfunction) {
   if (tfunction->is_oneway()) {
     return;
   }
@@ -2315,7 +2317,7 @@ void t_javame_generator::generate_function_helpers(t_function* tfunction) {
  *
  * @param tfunction The function to write a dispatcher for
  */
-void t_javame_generator::generate_process_function(t_service* tservice,
+void t_java2_generator::generate_process_function(t_service* tservice,
                                                  t_function* tfunction) {
   (void) tservice;
   // Open class
@@ -2464,7 +2466,7 @@ void t_javame_generator::generate_process_function(t_service* tservice,
  * @param tfield The field
  * @param prefix The variable name or container for this field
  */
-void t_javame_generator::generate_deserialize_field(ofstream& out,
+void t_java2_generator::generate_deserialize_field(ofstream& out,
                                                   t_field* tfield,
                                                   string prefix) {
   t_type* type = get_true_type(tfield->get_type());
@@ -2531,7 +2533,7 @@ void t_javame_generator::generate_deserialize_field(ofstream& out,
 /**
  * Generates an unserializer for a struct, invokes read()
  */
-void t_javame_generator::generate_deserialize_struct(ofstream& out,
+void t_java2_generator::generate_deserialize_struct(ofstream& out,
                                                    t_struct* tstruct,
                                                    string prefix) {
   out <<
@@ -2542,7 +2544,7 @@ void t_javame_generator::generate_deserialize_struct(ofstream& out,
 /**
  * Deserializes a container by reading its size and then iterating
  */
-void t_javame_generator::generate_deserialize_container(ofstream& out,
+void t_java2_generator::generate_deserialize_container(ofstream& out,
                                                       t_type* ttype,
                                                       string prefix) {
   scope_up(out);
@@ -2609,7 +2611,7 @@ void t_javame_generator::generate_deserialize_container(ofstream& out,
 /**
  * Generates code to deserialize a map
  */
-void t_javame_generator::generate_deserialize_map_element(ofstream& out,
+void t_java2_generator::generate_deserialize_map_element(ofstream& out,
                                                         t_map* tmap,
                                                         string prefix) {
   string key = tmp("_key");
@@ -2634,7 +2636,7 @@ void t_javame_generator::generate_deserialize_map_element(ofstream& out,
 /**
  * Deserializes a set element
  */
-void t_javame_generator::generate_deserialize_set_element(ofstream& out,
+void t_java2_generator::generate_deserialize_set_element(ofstream& out,
                                                         t_set* tset,
                                                         string prefix) {
   string elem = tmp("_elem");
@@ -2654,7 +2656,7 @@ void t_javame_generator::generate_deserialize_set_element(ofstream& out,
 /**
  * Deserializes a list element
  */
-void t_javame_generator::generate_deserialize_list_element(ofstream& out,
+void t_java2_generator::generate_deserialize_list_element(ofstream& out,
                                                          t_list* tlist,
                                                          string prefix) {
   string elem = tmp("_elem");
@@ -2677,7 +2679,7 @@ void t_javame_generator::generate_deserialize_list_element(ofstream& out,
  * @param tfield The field to serialize
  * @param prefix Name to prepend to field name
  */
-void t_javame_generator::generate_serialize_field(ofstream& out,
+void t_java2_generator::generate_serialize_field(ofstream& out,
                                                 t_field* tfield,
                                                 string prefix) {
   t_type* type = get_true_type(tfield->get_type());
@@ -2756,7 +2758,7 @@ void t_javame_generator::generate_serialize_field(ofstream& out,
  * @param tstruct The struct to serialize
  * @param prefix  String prefix to attach to all fields
  */
-void t_javame_generator::generate_serialize_struct(ofstream& out,
+void t_java2_generator::generate_serialize_struct(ofstream& out,
                                                  t_struct* tstruct,
                                                  string prefix) {
   (void) tstruct;
@@ -2770,7 +2772,7 @@ void t_javame_generator::generate_serialize_struct(ofstream& out,
  * @param ttype  The type of container
  * @param prefix String prefix for fields
  */
-void t_javame_generator::generate_serialize_container(ofstream& out,
+void t_java2_generator::generate_serialize_container(ofstream& out,
                                                     t_type* ttype,
                                                     string prefix) {
   scope_up(out);
@@ -2848,7 +2850,7 @@ void t_javame_generator::generate_serialize_container(ofstream& out,
 /**
  * Serializes the members of a map.
  */
-void t_javame_generator::generate_serialize_map_element(ofstream& out,
+void t_java2_generator::generate_serialize_map_element(ofstream& out,
                                                       t_map* tmap,
                                                       string iter,
                                                       string map) {
@@ -2862,7 +2864,7 @@ void t_javame_generator::generate_serialize_map_element(ofstream& out,
 /**
  * Serializes the members of a set.
  */
-void t_javame_generator::generate_serialize_set_element(ofstream& out,
+void t_java2_generator::generate_serialize_set_element(ofstream& out,
                                                       t_set* tset,
                                                       string iter) {
   t_field efield(tset->get_elem_type(), iter);
@@ -2872,7 +2874,7 @@ void t_javame_generator::generate_serialize_set_element(ofstream& out,
 /**
  * Serializes the members of a list.
  */
-void t_javame_generator::generate_serialize_list_element(ofstream& out,
+void t_java2_generator::generate_serialize_list_element(ofstream& out,
                                                        t_list* tlist,
                                                        string iter) {
   t_field efield(tlist->get_elem_type(), iter);
@@ -2886,7 +2888,7 @@ void t_javame_generator::generate_serialize_list_element(ofstream& out,
  * @param container Is the type going inside a container?
  * @return Java type name, i.e. Vector
  */
-string t_javame_generator::type_name(t_type* ttype, bool in_container, bool in_init, bool skip_generic) {
+string t_java2_generator::type_name(t_type* ttype, bool in_container, bool in_init, bool skip_generic) {
   (void) in_init;
   (void) skip_generic;
   // In Java typedefs are just resolved to their real type
@@ -2921,7 +2923,7 @@ string t_javame_generator::type_name(t_type* ttype, bool in_container, bool in_i
  * @param tbase The base type
  * @param container Is it going in a Java container?
  */
-string t_javame_generator::base_type_name(t_base_type* type,
+string t_java2_generator::base_type_name(t_base_type* type,
                                         bool in_container) {
   t_base_type::t_base tbase = type->get_base();
 
@@ -2956,7 +2958,7 @@ string t_javame_generator::base_type_name(t_base_type* type,
  *
  * @param ttype The type
  */
-string t_javame_generator::declare_field(t_field* tfield, bool init) {
+string t_java2_generator::declare_field(t_field* tfield, bool init) {
   // TODO(mcslee): do we ever need to initialize the field?
   string result = type_name(tfield->get_type()) + " " + tfield->get_name();
   if (init) {
@@ -3003,7 +3005,7 @@ string t_javame_generator::declare_field(t_field* tfield, bool init) {
  * @param tfunction Function definition
  * @return String of rendered function definition
  */
-string t_javame_generator::function_signature(t_function* tfunction,
+string t_java2_generator::function_signature(t_function* tfunction,
                                             string prefix) {
   t_type* ttype = tfunction->get_returntype();
   std::string result =
@@ -3021,7 +3023,7 @@ string t_javame_generator::function_signature(t_function* tfunction,
 /**
  * Renders a comma separated field list, with type names
  */
-string t_javame_generator::argument_list(t_struct* tstruct, bool include_types) {
+string t_java2_generator::argument_list(t_struct* tstruct, bool include_types) {
   string result = "";
 
   const vector<t_field*>& fields = tstruct->get_members();
@@ -3044,7 +3046,7 @@ string t_javame_generator::argument_list(t_struct* tstruct, bool include_types) 
 /**
  * Converts the parse type to a C++ enum string for the given type.
  */
-string t_javame_generator::type_to_enum(t_type* type) {
+string t_java2_generator::type_to_enum(t_type* type) {
   type = get_true_type(type);
 
   if (type->is_base_type()) {
@@ -3085,12 +3087,12 @@ string t_javame_generator::type_to_enum(t_type* type) {
 /**
  * Applies the correct style to a string based on the value of nocamel_style_
  */
-std::string t_javame_generator::get_cap_name(std::string name){
+std::string t_java2_generator::get_cap_name(std::string name){
   name[0] = toupper(name[0]);
   return name;
 }
 
-string t_javame_generator::constant_name(string name) {
+string t_java2_generator::constant_name(string name) {
   string constant_name;
 
   bool is_first = true;
@@ -3112,14 +3114,14 @@ string t_javame_generator::constant_name(string name) {
   return constant_name;
 }
 
-void t_javame_generator::generate_java_docstring_comment(ofstream &out, string contents) {
+void t_java2_generator::generate_java_docstring_comment(ofstream &out, string contents) {
   generate_docstring_comment(out,
     "/**\n",
     " * ", contents,
     " */\n");
 }
 
-void t_javame_generator::generate_java_doc(ofstream &out,
+void t_java2_generator::generate_java_doc(ofstream &out,
                                          t_field* field) {
   if (field->get_type()->is_enum()) {
     string combined_message = field->get_doc() + "\n@see " + get_enum_class_name(field->get_type());
@@ -3132,7 +3134,7 @@ void t_javame_generator::generate_java_doc(ofstream &out,
 /**
  * Emits a JavaDoc comment if the provided object has a doc in Thrift
  */
-void t_javame_generator::generate_java_doc(ofstream &out,
+void t_java2_generator::generate_java_doc(ofstream &out,
                                          t_doc* tdoc) {
   if (tdoc->has_doc()) {
     generate_java_docstring_comment(out, tdoc->get_doc());
@@ -3142,7 +3144,7 @@ void t_javame_generator::generate_java_doc(ofstream &out,
 /**
  * Emits a JavaDoc comment if the provided function object has a doc in Thrift
  */
-void t_javame_generator::generate_java_doc(ofstream &out,
+void t_java2_generator::generate_java_doc(ofstream &out,
                                          t_function* tfunction) {
   if (tfunction->has_doc()) {
     stringstream ss;
@@ -3163,7 +3165,7 @@ void t_javame_generator::generate_java_doc(ofstream &out,
   }
 }
 
-void t_javame_generator::generate_deep_copy_container(ofstream &out, std::string source_name_p1, std::string source_name_p2,
+void t_java2_generator::generate_deep_copy_container(ofstream &out, std::string source_name_p1, std::string source_name_p2,
                                                     std::string result_name, t_type* type) {
 
   t_container* container = (t_container*)type;
@@ -3269,7 +3271,7 @@ void t_javame_generator::generate_deep_copy_container(ofstream &out, std::string
   }
 }
 
-void t_javame_generator::generate_deep_copy_non_container(ofstream& out, std::string source_name, std::string dest_name, t_type* type) {
+void t_java2_generator::generate_deep_copy_non_container(ofstream& out, std::string source_name, std::string dest_name, t_type* type) {
   if (type->is_base_type() || type->is_enum() || type->is_typedef()) {
     // binary fields need to be copied with System.arraycopy
     if (((t_base_type*)type)->is_binary()){
@@ -3284,25 +3286,25 @@ void t_javame_generator::generate_deep_copy_non_container(ofstream& out, std::st
   }
 }
 
-std::string t_javame_generator::generate_isset_check(t_field* field) {
+std::string t_java2_generator::generate_isset_check(t_field* field) {
   return generate_isset_check(field->get_name());
 }
 
-std::string t_javame_generator::isset_field_id(t_field* field) {
+std::string t_java2_generator::isset_field_id(t_field* field) {
   return "__" + upcase_string(field->get_name() + "_isset_id");
 }
 
-std::string t_javame_generator::generate_isset_check(std::string field_name) {
+std::string t_java2_generator::generate_isset_check(std::string field_name) {
   return "is" + get_cap_name("set") + get_cap_name(field_name) + "()";
 }
 
-void t_javame_generator::generate_isset_set(ofstream& out, t_field* field) {
+void t_java2_generator::generate_isset_set(ofstream& out, t_field* field) {
   if (!type_can_be_null(field->get_type())) {
     indent(out) << "set" << get_cap_name(field->get_name()) << get_cap_name("isSet") << "(true);" << endl;
   }
 }
 
-std::string t_javame_generator::get_enum_class_name(t_type* type) {
+std::string t_java2_generator::get_enum_class_name(t_type* type) {
   string package = "";
   t_program* program = type->get_program();
   if (program != NULL && program != program_) {
@@ -3311,12 +3313,12 @@ std::string t_javame_generator::get_enum_class_name(t_type* type) {
   return package + type->get_name();
 }
 
-void t_javame_generator::generate_struct_desc(ofstream& out, t_struct* tstruct) {
+void t_java2_generator::generate_struct_desc(ofstream& out, t_struct* tstruct) {
   indent(out) <<
     "private static final TStruct STRUCT_DESC = new TStruct(\"" << tstruct->get_name() << "\");" << endl;
 }
 
-void t_javame_generator::generate_field_descs(ofstream& out, t_struct* tstruct) {
+void t_java2_generator::generate_field_descs(ofstream& out, t_struct* tstruct) {
   const vector<t_field*>& members = tstruct->get_members();
   vector<t_field*>::const_iterator m_iter;
 
@@ -3329,7 +3331,7 @@ void t_javame_generator::generate_field_descs(ofstream& out, t_struct* tstruct) 
   }
 }
 
-bool t_javame_generator::has_bit_vector(t_struct* tstruct) {
+bool t_java2_generator::has_bit_vector(t_struct* tstruct) {
   const vector<t_field*>& members = tstruct->get_members();
   vector<t_field*>::const_iterator m_iter;
 
@@ -3341,7 +3343,7 @@ bool t_javame_generator::has_bit_vector(t_struct* tstruct) {
   return false;
 }
 
-void t_javame_generator::generate_java_struct_clear(std::ofstream& out, t_struct* tstruct) {
+void t_java2_generator::generate_java_struct_clear(std::ofstream& out, t_struct* tstruct) {
   indent(out) << "public void clear() {" << endl;
 
   const vector<t_field*>& members = tstruct->get_members();
@@ -3383,5 +3385,5 @@ void t_javame_generator::generate_java_struct_clear(std::ofstream& out, t_struct
   indent(out) << "}" << endl << endl;
 }
 
-THRIFT_REGISTER_GENERATOR(javame, "Java ME", "")
+THRIFT_REGISTER_GENERATOR(java2, "Java ME", "")
 
