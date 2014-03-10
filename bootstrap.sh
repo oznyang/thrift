@@ -20,11 +20,11 @@
 #
 
 ./cleanup.sh
-if test -d lib/php/src/ext/thrift_protocol ; then
-    if phpize -v >/dev/null 2>/dev/null ; then
-        (cd lib/php/src/ext/thrift_protocol && phpize)
-    fi
-fi
+#if test -d lib/php/src/ext/thrift_protocol ; then
+#    if phpize -v >/dev/null 2>/dev/null ; then
+#        (cd lib/php/src/ext/thrift_protocol && phpize)
+#    fi
+#fi
 
 set -e
 
