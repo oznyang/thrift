@@ -1045,7 +1045,7 @@ void t_java2_generator::generate_service_client(t_service* tservice) {
     for (fi_iter = fields.begin(); fi_iter != fields.end(); ++fi_iter) {
       indent(f_service_) << "if (" << (*fi_iter)->get_name() << " != null) {" << endl;
       indent_up();
-      indent(f_service_) << "oprot_.writeFieldBegin(_META[" << i++ << "][" << j++ << "]);" << endl;
+      indent(f_service_) << "oprot_.writeFieldBegin(_META[" << i << "][" << j++ << "]);" << endl;
       // Write field contents
       generate_serialize_field(f_service_, *fi_iter, "");
       // Write field closer
@@ -1053,6 +1053,7 @@ void t_java2_generator::generate_service_client(t_service* tservice) {
       indent_down();
       indent(f_service_) << "}" << endl;
     }
+    i++;
     // Write the struct map
     indent(f_service_) << "oprot_.writeFieldStop();" << endl;
     indent(f_service_) << "sendEnd();" << endl << endl;
@@ -1575,10 +1576,10 @@ string t_java2_generator::base_type_name(t_base_type* type, bool in_container) {
     case t_base_type::TYPE_VOID:
       return "void";
     case t_base_type::TYPE_STRING:
-      if (!type->is_binary()) {
-        return "String";
+      if (type->is_binary()) {
+        return "ByteBuffer";
       } else {
-        return "byte[]";
+        return "String";
       }
     case t_base_type::TYPE_BOOL:
       return (in_container ? "Boolean" : "boolean");
