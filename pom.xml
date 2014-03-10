@@ -16,8 +16,8 @@
     <modules>
         <module>lib/java</module>
         <module>lib/java2</module>
-        <module>lib/csharp</module>
+<!--        <module>lib/csharp</module>
         <module>lib/php</module>
-        <module>lib/js</module>
+        <module>lib/js</module>-->
     </modules>
 </project>
