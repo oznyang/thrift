@@ -1080,23 +1080,23 @@ void t_java2_generator::generate_service_client(t_service* tservice) {
       indent(f_service_) << "switch (field_.id) {" << endl;
       indent_up();
 
-      indent(f_service_) << "case 0: // SUCCESS" << endl;
-      indent_up();
-      indent(f_service_) << "if (field_.type == TType.STRUCT) {" << endl;
-      indent_up();
       if(!ret_type->is_void()){
+        indent(f_service_) << "case 0: // RET" << endl;
+        indent_up();
+        indent(f_service_) << "if (field_.type == " << type_to_enum((*f_iter)->get_returntype()) << ") {" << endl;
+        indent_up();
         t_field ret_(ret_type, "ret_", 0);
         indent(f_service_) << declare_field(&ret_) << endl;
         generate_deserialize_field(f_service_, &ret_, "");
         indent(f_service_) << "return ret_;" << endl;
+        indent_down();
+        f_service_ <<
+          indent() << "} else { " << endl <<
+          indent() << "    TProtocolUtil.skip(iprot_, field_.type);" << endl <<
+          indent() << "}" << endl <<
+          indent() << "break;" << endl;
+        indent_down();
       }
-      indent_down();
-      f_service_ <<
-      indent() << "} else { " << endl <<
-      indent() << "    TProtocolUtil.skip(iprot_, field_.type);" << endl <<
-      indent() << "}" << endl <<
-      indent() << "break;" << endl;
-      indent_down();
 
       const vector<t_field*>& fields = (*f_iter)->get_xceptions()->get_members();
       vector<t_field*>::const_iterator fi_iter;

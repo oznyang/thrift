@@ -78,4 +78,7 @@ public class TProtocolException extends TException {
     return type_;
   }
 
+  public static void requiredField(String name) {
+    throw new TProtocolException("Required field '" + name + "' is unset! Struct:");
+  }
 }
