@@ -604,6 +604,8 @@ void t_java2_generator::generate_java_struct_definition(ofstream &out, t_struct*
 
   scope_up(out);
 
+  indent(out) << "private static final long serialVersionUID = 1L;" << endl;
+
   // Members are public for -java, private for -javabean
   const vector<t_field*> &members = tstruct->get_members();
   vector<t_field*>::const_iterator m_iter;

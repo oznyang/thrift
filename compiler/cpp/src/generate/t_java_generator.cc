@@ -1250,6 +1250,8 @@ void t_java_generator::generate_java_struct_definition(ofstream &out,
 
   scope_up(out);
 
+  indent(out) << "private static final long serialVersionUID = 1L;" << endl;
+
   generate_struct_desc(out, tstruct);
 
   // Members are public for -java, private for -javabean
