@@ -409,9 +409,9 @@ void t_java2_generator::print_const_value(std::ofstream &out, string name, t_typ
   }
   if (type->is_base_type()) {
     string v2 = render_const_value(out, type, value);
-    out << name << " = " << v2 << ";" << endl << endl;
+    out << name << " = " << v2 << ";" << endl;
   } else if (type->is_enum()) {
-    out << name << " = " << render_const_value(out, type, value) << ";" << endl << endl;
+    out << name << " = " << render_const_value(out, type, value) << ";" << endl;
   } else if (type->is_struct() || type->is_xception()) {
     const vector<t_field*> &fields = ((t_struct*) type)->get_members();
     vector<t_field*>::const_iterator f_iter;
@@ -622,6 +622,18 @@ void t_java2_generator::generate_java_struct_definition(ofstream &out, t_struct*
   }
 
   out << endl;
+
+  // Default constructor
+  indent(out) << "public " << tstruct->get_name() << "() {" << endl;
+  indent_up();
+  for (m_iter = members.begin(); m_iter != members.end(); ++m_iter) {
+    t_type* t = get_true_type((*m_iter)->get_type());
+    if ((*m_iter)->get_value() != NULL) {
+      print_const_value(out, "this." + (*m_iter)->get_name(), t, (*m_iter)->get_value(), true, true);
+    }
+  }
+  indent_down();
+  indent(out) << "}" << endl << endl;
 
   generate_java_bean_boilerplate(out, tstruct);
 
