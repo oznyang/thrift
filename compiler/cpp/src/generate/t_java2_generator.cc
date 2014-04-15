@@ -519,7 +519,7 @@ string t_java2_generator::render_const_value(ofstream &out, t_type* type, t_cons
         if (value->get_type() == t_const_value::CV_INTEGER) {
           render << "(double)" << value->get_integer();
         } else {
-          render << value->get_double();
+          render << value->get_double() << "D";
         }
         break;
       default:
