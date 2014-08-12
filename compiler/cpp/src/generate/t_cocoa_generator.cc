@@ -1062,7 +1062,7 @@ void t_cocoa_generator::generate_cocoa_struct_field_accessor_implementations(ofs
     indent(out) << "}" << endl << endl;
 
     // Unsetter - do we need this?
-    indent(out) << "- (void) unset" << cap_name << " {" << endl;
+/*    indent(out) << "- (void) unset" << cap_name << " {" << endl;
     indent_up();
     if (type_can_be_null(type)) {
       indent(out) << "[_" << field_name << " release_stub];" << endl;
@@ -1070,7 +1070,7 @@ void t_cocoa_generator::generate_cocoa_struct_field_accessor_implementations(ofs
     }
     indent(out) << "_" << field_name << "_isset = NO;" << endl;
     indent_down();
-    indent(out) << "}" << endl << endl;
+    indent(out) << "}" << endl << endl;*/
   }
 }
 
