@@ -2144,9 +2144,14 @@ void t_cocoa_generator::generate_serialize_list_element(ofstream& out,
  * @return Java type name, i.e. HashMap<Key,Value>
  */
 string t_cocoa_generator::type_name(t_type* ttype, bool class_ref) {
-  //if (ttype->is_typedef()) {
-  //   return cocoa_prefix_ + ttype->get_name();
-  //}
+  if (ttype->is_typedef()) {
+    t_program* program = ttype->get_program();
+    if (program != NULL) {
+      return program->get_namespace("cocoa") + ttype->get_name();
+    } else {
+      return ttype->get_name();
+    }
+  }
 
   string result;
   if (ttype->is_base_type()) {
@@ -2676,14 +2681,14 @@ void t_cocoa_generator::generate_cocoa_service_block_protocol(std::ofstream &out
     } else {
       out << " success:";
     }
-    t_type* retType= (*f_iter)->get_returntype();
-    out << " (void (^)(" << (retType->is_void() ? "id" : type_name(retType)) << " ret))" << "success error:(void (^)(NSException *ex))error;" << endl;
+    t_type *retType = (*f_iter)->get_returntype();
+    out << " (void (^)(" << (retType->is_void() ? "void" : type_name(retType) + " ret") << "))" << "success error:(void (^)(NSException *ex))error;" << endl;
   }
   out << "@end" << endl << endl;
 };
 
 void t_cocoa_generator::generate_cocoa_service_block_client_interface(std::ofstream &out, t_service *tservice) {
-  out << "@interface A" << cocoa_prefix_ << tservice->get_name() << "Client : NSObject <" << cocoa_prefix_ << tservice->get_name() << "> ";
+  out << "@interface A" << cocoa_prefix_ << tservice->get_name() << "Client : NSObject <A" << cocoa_prefix_ << tservice->get_name() << "> ";
 
   scope_up(out);
   out << indent() << "  id <" << cocoa_prefix_ << tservice->get_name() << "> client;" << endl;
@@ -2726,7 +2731,7 @@ void t_cocoa_generator::generate_cocoa_service__block_client_implementation(std:
     }
 
     t_type* retType= (*f_iter)->get_returntype();
-    out << "(void (^)(" << (retType->is_void() ? "id" : type_name(retType)) << " ret))" << "success error:(void (^)(NSException *ex))error" << endl;
+    out << "(void (^)(" << (retType->is_void() ? "void" : type_name(retType) + " ret") << "))" << "success error:(void (^)(NSException *ex))error" << endl;
     scope_up(out);
     out << "  dispatch_queue_t queue_t = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0ul);\n"
             "  dispatch_async(queue_t, ^{\n"
@@ -2754,13 +2759,15 @@ void t_cocoa_generator::generate_cocoa_service__block_client_implementation(std:
     }
 
     out <<  "];\n      dispatch_sync(dispatch_get_main_queue(), ^{\n";
-    out <<  "        success(" << ((*f_iter)->get_returntype()->is_void()?"nil":"result") << ");\n";
+    out <<  "        success(" << ((*f_iter)->get_returntype()->is_void()?"":"result") << ");\n";
     out <<  "      });\n"
             "    }\n"
             "    @catch (NSException *ex) {\n"
             "      [[NSNotificationCenter defaultCenter] postNotificationName:@\"msc_app_ex\" object:ex];\n"
             "      if (error) {\n"
-            "        error(ex);\n"
+            "        dispatch_sync(dispatch_get_main_queue(), ^{\n"
+            "          error(ex);\n"
+            "        });\n"
             "      }\n"
             "    }\n"
             "  });" << endl;
