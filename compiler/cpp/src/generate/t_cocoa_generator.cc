@@ -2657,7 +2657,7 @@ string t_cocoa_generator::call_field_setter(t_field* tfield, string fieldName) {
 }
 
 string t_cocoa_generator::convert_name(std::string fieldName) {
-  if(fieldName == "description" || fieldName == "used" || fieldName == "id" || fieldName == "no" || fieldName == "attributes" || fieldName == "attribute"){
+  if(fieldName == "description" || fieldName == "used" || fieldName == "id" || fieldName == "no" || fieldName == "attributes" || fieldName == "attribute" || fieldName == "domain"){
     return fieldName + keyword_postfix_;
   }
   return fieldName;
