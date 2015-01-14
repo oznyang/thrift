@@ -158,6 +158,7 @@ namespace Thrift.Transport
 			try
 			{
 				HttpWebRequest connection = CreateRequest();
+                connection.Timeout = 8000;
 
 				byte[] data = outputStream.ToArray();
 				connection.ContentLength = data.Length;
@@ -165,7 +166,11 @@ namespace Thrift.Transport
 				using (Stream requestStream = connection.GetRequestStream())
 				{
 					requestStream.Write(data, 0, data.Length);
-					inputStream = connection.GetResponse().GetResponseStream();
+					var rs = connection.GetResponse().GetResponseStream();
+                    inputStream = new MemoryStream();
+                    rs.CopyTo(inputStream);
+                    inputStream.Position = 0;
+                    rs.Close();
 				}
 			}
 			catch (IOException iox)
